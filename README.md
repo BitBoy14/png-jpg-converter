@@ -1,6 +1,6 @@
 # PNG to JPG Converter
 
-A **fully functional PNG to JPEG converter written in raw C++** with **zero external dependencies**. No libpng, no libjpeg, no zlib - everything is implemented from scratch. Made using simple prompt and Claude Opus 4.5. Dec 2025
+A **fully functional PNG to JPEG converter written in raw C++** with **zero external dependencies**. No libpng, no libjpeg, no zlib - everything is implemented from scratch.
 
 ## Features
 
@@ -129,9 +129,17 @@ g++ -O2 -std=c++11 -o converter.exe converter.cpp
 
 ## License
 
-MIT License - Feel free to use, modify, and distribute.
+This project is **open source** and free to use, modify, and distribute.
+
+**Attribution Required:** If you use this code in your project, please credit the original author.
+
+Example attribution:
+```
+PNG to JPG Converter by BitBoy14
+https://github.com/BitBoy14/png-jpg-converter
+```
 
 ## Author
 
-Built as a demonstration of image format internals without relying on external libraries.
+**BitBoy14** - Built as a demonstration of image format internals without relying on external libraries.
 
