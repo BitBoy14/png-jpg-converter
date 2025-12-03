@@ -1,6 +1,6 @@
 # PNG to JPG Converter
 
-A **fully functional PNG to JPEG converter written in raw C++** with **zero external dependencies**. No libpng, no libjpeg, no zlib - everything is implemented from scratch.
+A **fully functional PNG to JPEG converter written in raw C++** with **zero external dependencies**. No libpng, no libjpeg, no zlib - everything is implemented from scratch using Anthropics Opus 4.5 only. It took around 2.5-3 minutes to generate the code. Dec 2025.
 
 ## Features
 
