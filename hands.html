@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stretchy Shape - Dual Hand Control</title>
+    <title>BitMax14 Shape Match</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
@@ -15,6 +15,9 @@
             --neon-yellow: #fff000;
             --neon-green: #00ff88;
             --neon-orange: #ff6600;
+            --neon-red: #ff3366;
+            --neon-purple: #aa00ff;
+            --neon-blue: #0066ff;
             --dark-bg: #0a0a0f;
             --grid-color: rgba(0, 245, 255, 0.1);
         }
@@ -76,7 +79,7 @@
         /* Title overlay */
         .title-overlay {
             position: fixed;
-            top: 20px;
+            top: 15px;
             left: 50%;
             transform: translateX(-50%);
             text-align: center;
@@ -86,10 +89,10 @@
 
         h1 {
             font-family: 'Orbitron', monospace;
-            font-size: clamp(1.2rem, 3vw, 2rem);
+            font-size: clamp(1rem, 2.5vw, 1.6rem);
             font-weight: 900;
             text-transform: uppercase;
-            letter-spacing: 0.3em;
+            letter-spacing: 0.2em;
             background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -104,9 +107,9 @@
 
         .subtitle {
             font-family: 'Rajdhani', sans-serif;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             color: rgba(255, 255, 255, 0.5);
-            letter-spacing: 0.5em;
+            letter-spacing: 0.4em;
             text-transform: uppercase;
         }
 
@@ -132,7 +135,7 @@
         }
 
         video {
-            opacity: 0.4;
+            opacity: 0.3;
         }
 
         #hand-canvas {
@@ -153,8 +156,8 @@
         /* Finger cursors for each hand */
         .finger-cursor {
             position: fixed;
-            width: 50px;
-            height: 50px;
+            width: 45px;
+            height: 45px;
             border: 3px solid var(--neon-cyan);
             border-radius: 50%;
             pointer-events: none;
@@ -170,8 +173,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             background: var(--neon-cyan);
             border-radius: 50%;
             box-shadow: 0 0 10px var(--neon-cyan);
@@ -190,11 +193,11 @@
         .finger-cursor.left::before {
             content: 'L';
             position: absolute;
-            top: -28px;
+            top: -25px;
             left: 50%;
             transform: translateX(-50%);
             font-family: 'Orbitron', monospace;
-            font-size: 14px;
+            font-size: 12px;
             color: var(--neon-cyan);
             text-shadow: 0 0 10px var(--neon-cyan);
         }
@@ -212,11 +215,11 @@
         .finger-cursor.right::before {
             content: 'R';
             position: absolute;
-            top: -28px;
+            top: -25px;
             left: 50%;
             transform: translateX(-50%);
             font-family: 'Orbitron', monospace;
-            font-size: 14px;
+            font-size: 12px;
             color: var(--neon-green);
             text-shadow: 0 0 10px var(--neon-green);
         }
@@ -248,6 +251,94 @@
             50% { transform: scale(1.3); }
         }
 
+        /* Game UI - moved to left side */
+        .game-panel {
+            position: fixed;
+            top: 100px;
+            left: 20px;
+            background: rgba(10, 10, 15, 0.95);
+            border: 2px solid var(--neon-magenta);
+            border-radius: 15px;
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 200;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.3);
+        }
+
+        .game-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .game-stat-label {
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .game-stat-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        .game-stat-value.timer {
+            color: var(--neon-yellow);
+            text-shadow: 0 0 10px var(--neon-yellow);
+        }
+
+        .game-stat-value.score {
+            color: var(--neon-green);
+            text-shadow: 0 0 10px var(--neon-green);
+        }
+
+        .game-stat-value.round-score {
+            color: var(--neon-orange);
+            text-shadow: 0 0 10px var(--neon-orange);
+        }
+
+        /* Accuracy meter */
+        .accuracy-bar {
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 20px;
+            background: rgba(10, 10, 15, 0.9);
+            border: 2px solid var(--neon-cyan);
+            border-radius: 10px;
+            overflow: hidden;
+            z-index: 200;
+        }
+
+        .accuracy-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-red), var(--neon-yellow), var(--neon-green));
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .accuracy-label {
+            position: fixed;
+            bottom: 145px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Orbitron', monospace;
+            font-size: 0.75rem;
+            color: var(--neon-cyan);
+            letter-spacing: 0.1em;
+            z-index: 200;
+        }
+
         /* Status panel */
         .status-panel {
             position: fixed;
@@ -257,9 +348,9 @@
             background: rgba(10, 10, 15, 0.9);
             border: 1px solid var(--neon-cyan);
             border-radius: 10px;
-            padding: 15px 30px;
+            padding: 12px 25px;
             display: flex;
-            gap: 25px;
+            gap: 20px;
             z-index: 200;
             backdrop-filter: blur(10px);
         }
@@ -268,32 +359,24 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 5px;
+            gap: 3px;
         }
 
         .status-label {
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             color: rgba(255, 255, 255, 0.5);
             text-transform: uppercase;
-            letter-spacing: 0.15em;
+            letter-spacing: 0.1em;
         }
 
         .status-value {
             font-family: 'Orbitron', monospace;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             color: var(--neon-cyan);
         }
 
         .status-value.active {
             color: var(--neon-yellow);
-        }
-
-        .status-value.left-active {
-            color: var(--neon-cyan);
-        }
-
-        .status-value.right-active {
-            color: var(--neon-green);
         }
 
         /* Loading state */
@@ -357,6 +440,75 @@
             50% { opacity: 0.5; }
         }
 
+        /* Game buttons - moved below game panel */
+        .btn-container {
+            position: fixed;
+            top: 380px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 200;
+        }
+
+        .game-btn {
+            background: rgba(10, 10, 15, 0.9);
+            border: 2px solid var(--neon-green);
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.75rem;
+            color: var(--neon-green);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .game-btn:hover {
+            background: var(--neon-green);
+            color: var(--dark-bg);
+            box-shadow: 0 0 30px var(--neon-green);
+        }
+
+        .game-btn.reset {
+            border-color: var(--neon-magenta);
+            color: var(--neon-magenta);
+        }
+
+        .game-btn.reset:hover {
+            background: var(--neon-magenta);
+            color: var(--dark-bg);
+            box-shadow: 0 0 30px var(--neon-magenta);
+        }
+
+        .game-btn.submit {
+            border-color: var(--neon-yellow);
+            color: var(--neon-yellow);
+        }
+
+        .game-btn.submit:hover {
+            background: var(--neon-yellow);
+            color: var(--dark-bg);
+            box-shadow: 0 0 30px var(--neon-yellow);
+        }
+
+        .game-btn.sound {
+            border-color: var(--neon-cyan);
+            color: var(--neon-cyan);
+        }
+
+        .game-btn.sound:hover {
+            background: var(--neon-cyan);
+            color: var(--dark-bg);
+            box-shadow: 0 0 30px var(--neon-cyan);
+        }
+
+        .game-btn.sound.muted {
+            border-color: var(--neon-red);
+            color: var(--neon-red);
+        }
+
         /* Instructions */
         .instructions {
             position: fixed;
@@ -365,25 +517,25 @@
             background: rgba(10, 10, 15, 0.9);
             border: 1px solid rgba(0, 245, 255, 0.3);
             border-radius: 10px;
-            padding: 15px 20px;
-            max-width: 300px;
+            padding: 12px 15px;
+            max-width: 250px;
             z-index: 200;
             backdrop-filter: blur(10px);
         }
 
         .instructions h3 {
             font-family: 'Orbitron', monospace;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--neon-cyan);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             letter-spacing: 0.1em;
         }
 
         .instructions p {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: rgba(255, 255, 255, 0.7);
-            line-height: 1.6;
-            margin-bottom: 8px;
+            line-height: 1.5;
+            margin-bottom: 6px;
         }
 
         .instructions .highlight-cyan {
@@ -401,29 +553,152 @@
             font-weight: 700;
         }
 
-        /* Reset button */
-        .reset-btn {
-            position: fixed;
-            top: 100px;
-            left: 20px;
-            background: rgba(10, 10, 15, 0.9);
-            border: 2px solid var(--neon-magenta);
-            border-radius: 8px;
-            padding: 12px 24px;
-            font-family: 'Orbitron', monospace;
-            font-size: 0.8rem;
-            color: var(--neon-magenta);
-            cursor: pointer;
-            z-index: 200;
-            transition: all 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
+        .instructions .highlight-yellow {
+            color: var(--neon-yellow);
+            font-weight: 700;
         }
 
-        .reset-btn:hover {
-            background: var(--neon-magenta);
-            color: var(--dark-bg);
-            box-shadow: 0 0 30px var(--neon-magenta);
+        /* Game over screen */
+        .game-over-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 10, 15, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 500;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .game-over-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .game-over-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta), var(--neon-yellow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 30px;
+            text-shadow: 0 0 50px rgba(255, 0, 255, 0.5);
+        }
+
+        .final-score {
+            font-family: 'Orbitron', monospace;
+            font-size: 5rem;
+            color: var(--neon-green);
+            text-shadow: 0 0 50px var(--neon-green);
+            margin-bottom: 20px;
+        }
+
+        .round-scores {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .round-score-item {
+            background: rgba(0, 245, 255, 0.1);
+            border: 1px solid var(--neon-cyan);
+            border-radius: 10px;
+            padding: 15px 20px;
+            text-align: center;
+        }
+
+        .round-score-item .round-num {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7rem;
+            color: var(--neon-cyan);
+            margin-bottom: 5px;
+        }
+
+        .round-score-item .round-pts {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            color: var(--neon-yellow);
+        }
+
+        .play-again-btn {
+            background: linear-gradient(90deg, var(--neon-magenta), var(--neon-cyan));
+            border: none;
+            border-radius: 12px;
+            padding: 20px 50px;
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2rem;
+            color: white;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            transition: all 0.3s;
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.5);
+        }
+
+        .play-again-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 50px rgba(255, 0, 255, 0.8);
+        }
+
+        /* Round transition */
+        .round-transition {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Orbitron', monospace;
+            font-size: 4rem;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 50px var(--neon-cyan);
+            z-index: 300;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .round-transition.visible {
+            opacity: 1;
+            animation: roundPulse 0.5s ease-out;
+        }
+
+        @keyframes roundPulse {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        /* Match indicator */
+        .match-indicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Orbitron', monospace;
+            font-size: 2rem;
+            color: var(--neon-green);
+            text-shadow: 0 0 30px var(--neon-green);
+            z-index: 250;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .match-indicator.visible {
+            opacity: 1;
+            animation: matchPop 1s ease-out forwards;
+        }
+
+        @keyframes matchPop {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            30% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
         }
     </style>
 </head>
@@ -433,12 +708,12 @@
 
     <div class="loading-overlay" id="loading">
         <div class="loader"></div>
-        <div class="loading-text">INITIALIZING STRETCHY MODE</div>
+        <div class="loading-text">INITIALIZING BITMAX14</div>
     </div>
 
     <div class="title-overlay">
-        <h1>Stretchy Shape</h1>
-        <p class="subtitle">Pull &amp; Deform with Both Hands</p>
+        <h1>BitMax14 Shape Match</h1>
+        <p class="subtitle">Match the Target Shape!</p>
     </div>
 
     <div class="video-container">
@@ -446,21 +721,52 @@
         <canvas id="hand-canvas"></canvas>
     </div>
 
-    <!-- Canvas for the stretchy shape -->
+    <!-- Canvas for the shapes -->
     <canvas id="shape-canvas"></canvas>
 
     <!-- Finger cursors for each hand -->
     <div class="finger-cursor left" id="finger-cursor-left"></div>
     <div class="finger-cursor right" id="finger-cursor-right"></div>
 
-    <button class="reset-btn" id="reset-btn">Reset Shape</button>
+    <!-- Game UI - moved to left side -->
+    <div class="game-panel">
+        <div class="game-stat">
+            <span class="game-stat-label">Round</span>
+            <span class="game-stat-value" id="round-display">1 / 5</span>
+        </div>
+        <div class="game-stat">
+            <span class="game-stat-label">Time</span>
+            <span class="game-stat-value timer" id="timer-display">0.0s</span>
+        </div>
+        <div class="game-stat">
+            <span class="game-stat-label">Round Score</span>
+            <span class="game-stat-value round-score" id="round-score-display">0</span>
+        </div>
+        <div class="game-stat">
+            <span class="game-stat-label">Total Score</span>
+            <span class="game-stat-value score" id="total-score-display">0</span>
+        </div>
+    </div>
+
+    <div class="accuracy-label">ACCURACY: <span id="accuracy-value">0%</span></div>
+    <div class="accuracy-bar">
+        <div class="accuracy-fill" id="accuracy-fill"></div>
+    </div>
+
+    <div class="btn-container">
+        <button class="game-btn" id="start-btn">Start Game</button>
+        <button class="game-btn submit" id="submit-btn">Submit Shape</button>
+        <button class="game-btn reset" id="reset-btn">Reset Points</button>
+        <button class="game-btn sound" id="sound-btn">🔊 Sound ON</button>
+    </div>
 
     <div class="instructions">
-        <h3>// How to Stretch</h3>
-        <p>Show <span class="highlight-cyan">both hands</span> to the camera.</p>
-        <p><span class="highlight-magenta">Pinch</span> near a <span class="highlight-magenta">corner</span> to grab it!</p>
-        <p>Each hand can grab a different corner - stretch it into <span class="highlight-cyan">crazy shapes!</span></p>
-        <p>The shape is like <span class="highlight-green">silly putty</span> - pull, stretch, and squish it!</p>
+        <h3>// How to Play</h3>
+        <p><span class="highlight-cyan">12 points</span> to drag!</p>
+        <p><span class="highlight-magenta">Target shape</span> shown in <span class="highlight-magenta">pink outline</span></p>
+        <p><span class="highlight-yellow">Pinch</span> to grab &amp; drag points to match!</p>
+        <p><span class="highlight-green">MUST reach 95% accuracy!</span></p>
+        <p>Below 95% = <span class="highlight-magenta">ZERO points!</span></p>
     </div>
 
     <div class="status-panel">
@@ -478,7 +784,212 @@
         </div>
     </div>
 
+    <!-- Round transition display -->
+    <div class="round-transition" id="round-transition">ROUND 1</div>
+
+    <!-- Match indicator -->
+    <div class="match-indicator" id="match-indicator">+1000 pts!</div>
+
+    <!-- Game over overlay -->
+    <div class="game-over-overlay" id="game-over">
+        <div class="game-over-title">GAME COMPLETE!</div>
+        <div class="final-score" id="final-score">0</div>
+        <div class="round-scores" id="round-scores"></div>
+        <button class="play-again-btn" id="play-again-btn">Play Again</button>
+    </div>
+
     <script>
+        // ============================================
+        // SOUND ENGINE - Web Audio API Synthesizer
+        // ============================================
+        class SoundEngine {
+            constructor() {
+                this.audioCtx = null;
+                this.masterGain = null;
+                this.musicGain = null;
+                this.sfxGain = null;
+                this.isMuted = false;
+                this.isPlaying = false;
+                this.musicInterval = null;
+                this.beatIndex = 0;
+            }
+
+            init() {
+                if (this.audioCtx) return;
+                this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Master gain
+                this.masterGain = this.audioCtx.createGain();
+                this.masterGain.gain.value = 0.5;
+                this.masterGain.connect(this.audioCtx.destination);
+
+                // Music gain
+                this.musicGain = this.audioCtx.createGain();
+                this.musicGain.gain.value = 0.3;
+                this.musicGain.connect(this.masterGain);
+
+                // SFX gain
+                this.sfxGain = this.audioCtx.createGain();
+                this.sfxGain.gain.value = 0.6;
+                this.sfxGain.connect(this.masterGain);
+            }
+
+            toggleMute() {
+                this.isMuted = !this.isMuted;
+                if (this.masterGain) {
+                    this.masterGain.gain.value = this.isMuted ? 0 : 0.5;
+                }
+                return this.isMuted;
+            }
+
+            // Play a synth note
+            playNote(frequency, duration, type = 'sine', gainNode = this.sfxGain, attack = 0.01, decay = 0.1) {
+                if (!this.audioCtx || this.isMuted) return;
+                
+                const osc = this.audioCtx.createOscillator();
+                const gain = this.audioCtx.createGain();
+                
+                osc.type = type;
+                osc.frequency.value = frequency;
+                
+                gain.gain.setValueAtTime(0, this.audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.3, this.audioCtx.currentTime + attack);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(gainNode);
+                
+                osc.start();
+                osc.stop(this.audioCtx.currentTime + duration);
+            }
+
+            // Play chord
+            playChord(frequencies, duration, type = 'sine') {
+                frequencies.forEach(freq => this.playNote(freq, duration, type, this.musicGain));
+            }
+
+            // Sound effects
+            playGrab() {
+                if (!this.audioCtx) return;
+                this.playNote(880, 0.1, 'square');
+                setTimeout(() => this.playNote(1100, 0.08, 'square'), 50);
+            }
+
+            playRelease() {
+                if (!this.audioCtx) return;
+                this.playNote(660, 0.1, 'triangle');
+            }
+
+            playSubmit() {
+                if (!this.audioCtx) return;
+                const notes = [523, 659, 784, 1047]; // C E G C
+                notes.forEach((freq, i) => {
+                    setTimeout(() => this.playNote(freq, 0.3, 'sine'), i * 100);
+                });
+            }
+
+            playRoundStart() {
+                if (!this.audioCtx) return;
+                this.playNote(392, 0.15, 'sawtooth'); // G
+                setTimeout(() => this.playNote(523, 0.15, 'sawtooth'), 100); // C
+                setTimeout(() => this.playNote(659, 0.2, 'sawtooth'), 200); // E
+                setTimeout(() => this.playNote(784, 0.4, 'sawtooth'), 300); // G
+            }
+
+            playGameOver() {
+                if (!this.audioCtx) return;
+                // Victory fanfare
+                const melody = [
+                    { freq: 523, time: 0 },     // C
+                    { freq: 659, time: 150 },   // E
+                    { freq: 784, time: 300 },   // G
+                    { freq: 1047, time: 450 },  // C5
+                    { freq: 784, time: 600 },   // G
+                    { freq: 1047, time: 750 },  // C5
+                ];
+                melody.forEach(note => {
+                    setTimeout(() => this.playNote(note.freq, 0.3, 'sine'), note.time);
+                });
+            }
+
+            playTick() {
+                if (!this.audioCtx) return;
+                this.playNote(1200, 0.03, 'sine');
+            }
+
+            playHighAccuracy() {
+                if (!this.audioCtx) return;
+                this.playNote(1318, 0.15, 'sine'); // E6
+                setTimeout(() => this.playNote(1568, 0.2, 'sine'), 80); // G6
+            }
+
+            // Background music - synthwave style
+            startMusic() {
+                if (!this.audioCtx || this.isPlaying) return;
+                this.isPlaying = true;
+                
+                // Synthwave chord progression (Am - F - C - G)
+                const chords = [
+                    [220, 261.63, 329.63],  // Am (A3, C4, E4)
+                    [174.61, 220, 261.63],  // F (F3, A3, C4)
+                    [261.63, 329.63, 392],  // C (C4, E4, G4)
+                    [196, 246.94, 293.66],  // G (G3, B3, D4)
+                ];
+
+                // Bass notes
+                const bass = [110, 87.31, 130.81, 98]; // A2, F2, C3, G2
+
+                let chordIndex = 0;
+                const bpm = 100;
+                const beatLength = 60000 / bpm;
+
+                // Arpeggio pattern
+                const playArpeggio = () => {
+                    if (!this.isPlaying || this.isMuted) return;
+                    
+                    const chord = chords[chordIndex];
+                    const bassNote = bass[chordIndex];
+                    
+                    // Play bass
+                    this.playNote(bassNote, beatLength * 2 / 1000, 'sawtooth', this.musicGain);
+                    
+                    // Play arpeggio
+                    chord.forEach((note, i) => {
+                        setTimeout(() => {
+                            if (this.isPlaying && !this.isMuted) {
+                                this.playNote(note, 0.2, 'triangle', this.musicGain);
+                            }
+                        }, i * (beatLength / 4));
+                    });
+                    
+                    // Add high synth lead occasionally
+                    if (this.beatIndex % 4 === 0) {
+                        this.playNote(chord[2] * 2, 0.4, 'sine', this.musicGain);
+                    }
+                    
+                    this.beatIndex++;
+                    chordIndex = (chordIndex + 1) % chords.length;
+                };
+
+                playArpeggio();
+                this.musicInterval = setInterval(playArpeggio, beatLength * 2);
+            }
+
+            stopMusic() {
+                this.isPlaying = false;
+                if (this.musicInterval) {
+                    clearInterval(this.musicInterval);
+                    this.musicInterval = null;
+                }
+            }
+        }
+
+        // Initialize sound engine
+        const soundEngine = new SoundEngine();
+
+        // ============================================
+        // DOM Elements
+        // ============================================
         const videoElement = document.getElementById('webcam');
         const handCanvas = document.getElementById('hand-canvas');
         const handCtx = handCanvas.getContext('2d');
@@ -488,33 +999,75 @@
         const fingerCursorRight = document.getElementById('finger-cursor-right');
         const loadingOverlay = document.getElementById('loading');
         const resetBtn = document.getElementById('reset-btn');
+        const startBtn = document.getElementById('start-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const soundBtn = document.getElementById('sound-btn');
+        const playAgainBtn = document.getElementById('play-again-btn');
 
         const leftHandStatus = document.getElementById('left-hand-status');
         const rightHandStatus = document.getElementById('right-hand-status');
         const modeStatus = document.getElementById('mode-status');
 
-        // Shape corners (quadrilateral) - start as a square
-        // Order: top-left, top-right, bottom-right, bottom-left
-        let baseSize = Math.min(window.innerWidth, window.innerHeight) * 0.35;
+        const roundDisplay = document.getElementById('round-display');
+        const timerDisplay = document.getElementById('timer-display');
+        const roundScoreDisplay = document.getElementById('round-score-display');
+        const totalScoreDisplay = document.getElementById('total-score-display');
+        const accuracyFill = document.getElementById('accuracy-fill');
+        const accuracyValue = document.getElementById('accuracy-value');
+        const roundTransition = document.getElementById('round-transition');
+        const matchIndicator = document.getElementById('match-indicator');
+        const gameOverOverlay = document.getElementById('game-over');
+        const finalScoreEl = document.getElementById('final-score');
+        const roundScoresEl = document.getElementById('round-scores');
+
+        // Game state
+        const TOTAL_ROUNDS = 5;
+        const NUM_POINTS = 12;
+        const MAX_ROUND_SCORE = 10000;
+        const TIME_PENALTY_PER_SECOND = 50;
+        const MIN_ACCURACY_THRESHOLD = 0.95; // Below 95% accuracy = 0 points - MUST be precise!
+        const ACCURACY_POWER = 3; // Exponential curve for remaining 5%
+
+        let gameState = {
+            active: false,
+            currentRound: 0,
+            totalScore: 0,
+            roundScores: [],
+            roundStartTime: 0,
+            currentTime: 0
+        };
+
+        // 12 control points for the shape
+        let baseSize = Math.min(window.innerWidth, window.innerHeight) * 0.18; // Player shape size
+        let targetBaseSize = Math.min(window.innerWidth, window.innerHeight) * 0.28; // Target shape size (bigger)
         let centerX = window.innerWidth / 2;
         let centerY = window.innerHeight / 2;
 
-        let corners = [
-            { x: centerX - baseSize/2, y: centerY - baseSize/2 }, // top-left
-            { x: centerX + baseSize/2, y: centerY - baseSize/2 }, // top-right
-            { x: centerX + baseSize/2, y: centerY + baseSize/2 }, // bottom-right
-            { x: centerX - baseSize/2, y: centerY + baseSize/2 }  // bottom-left
-        ];
+        // Generate initial 12 points in a dodecagon pattern
+        function generateInitialPoints() {
+            const points = [];
+            for (let i = 0; i < NUM_POINTS; i++) {
+                const angle = (i / NUM_POINTS) * Math.PI * 2 - Math.PI / 2;
+                points.push({
+                    x: centerX + Math.cos(angle) * baseSize,
+                    y: centerY + Math.sin(angle) * baseSize
+                });
+            }
+            return points;
+        }
 
-        // For smooth animation
-        let targetCorners = corners.map(c => ({ ...c }));
-        
-        // Corner grab radius
-        const grabRadius = 80;
+        let points = generateInitialPoints();
+        let targetPoints = generateInitialPoints();
+        let smoothPoints = points.map(p => ({ ...p }));
+
+        // Grab radius for each point
+        const grabRadius = 60;
 
         // Hand states
-        let leftHand = { detected: false, pinching: false, x: 0, y: 0, grabbedCorner: -1 };
-        let rightHand = { detected: false, pinching: false, x: 0, y: 0, grabbedCorner: -1 };
+        let leftHand = { detected: false, pinching: false, x: 0, y: 0, grabbedPoint: -1 };
+        let rightHand = { detected: false, pinching: false, x: 0, y: 0, grabbedPoint: -1 };
+        let prevLeftGrabbed = -1;
+        let prevRightGrabbed = -1;
 
         // Resize canvases
         function resizeCanvases() {
@@ -526,34 +1079,251 @@
         resizeCanvases();
         window.addEventListener('resize', resizeCanvases);
 
-        // Reset shape to square
-        function resetShape() {
-            baseSize = Math.min(window.innerWidth, window.innerHeight) * 0.35;
-            centerX = window.innerWidth / 2;
-            centerY = window.innerHeight / 2;
-
-            targetCorners = [
-                { x: centerX - baseSize/2, y: centerY - baseSize/2 },
-                { x: centerX + baseSize/2, y: centerY - baseSize/2 },
-                { x: centerX + baseSize/2, y: centerY + baseSize/2 },
-                { x: centerX - baseSize/2, y: centerY + baseSize/2 }
-            ];
+        // Generate a random target shape (uses targetBaseSize for bigger target)
+        function generateRandomTargetShape() {
+            const newTarget = [];
+            const shapeType = Math.floor(Math.random() * 5);
+            
+            switch(shapeType) {
+                case 0: // Wobbly circle with random radii
+                    for (let i = 0; i < NUM_POINTS; i++) {
+                        const angle = (i / NUM_POINTS) * Math.PI * 2 - Math.PI / 2;
+                        const radiusVariation = targetBaseSize * (0.6 + Math.random() * 0.8);
+                        newTarget.push({
+                            x: centerX + Math.cos(angle) * radiusVariation,
+                            y: centerY + Math.sin(angle) * radiusVariation
+                        });
+                    }
+                    break;
+                case 1: // Star-like shape
+                    for (let i = 0; i < NUM_POINTS; i++) {
+                        const angle = (i / NUM_POINTS) * Math.PI * 2 - Math.PI / 2;
+                        const radius = i % 2 === 0 ? targetBaseSize * 1.2 : targetBaseSize * 0.5;
+                        newTarget.push({
+                            x: centerX + Math.cos(angle) * radius,
+                            y: centerY + Math.sin(angle) * radius
+                        });
+                    }
+                    break;
+                case 2: // Elongated shape
+                    for (let i = 0; i < NUM_POINTS; i++) {
+                        const angle = (i / NUM_POINTS) * Math.PI * 2 - Math.PI / 2;
+                        const xRadius = targetBaseSize * (0.5 + Math.random() * 0.3);
+                        const yRadius = targetBaseSize * (1 + Math.random() * 0.5);
+                        newTarget.push({
+                            x: centerX + Math.cos(angle) * xRadius,
+                            y: centerY + Math.sin(angle) * yRadius
+                        });
+                    }
+                    break;
+                case 3: // Asymmetric blob
+                    for (let i = 0; i < NUM_POINTS; i++) {
+                        const angle = (i / NUM_POINTS) * Math.PI * 2 - Math.PI / 2;
+                        let radius = targetBaseSize;
+                        if (i < 3) radius *= 1.3;
+                        else if (i >= 6 && i < 9) radius *= 0.6;
+                        radius += (Math.random() - 0.5) * targetBaseSize * 0.3;
+                        newTarget.push({
+                            x: centerX + Math.cos(angle) * radius,
+                            y: centerY + Math.sin(angle) * radius
+                        });
+                    }
+                    break;
+                case 4: // Square-ish with rounded corners
+                    const cornerIndices = [0, 3, 6, 9];
+                    for (let i = 0; i < NUM_POINTS; i++) {
+                        const angle = (i / NUM_POINTS) * Math.PI * 2 - Math.PI / 2;
+                        let radius = targetBaseSize;
+                        if (cornerIndices.includes(i)) {
+                            radius *= 1.4;
+                        } else {
+                            radius *= 0.8;
+                        }
+                        newTarget.push({
+                            x: centerX + Math.cos(angle) * radius,
+                            y: centerY + Math.sin(angle) * radius
+                        });
+                    }
+                    break;
+            }
+            
+            return newTarget;
         }
 
-        resetBtn.addEventListener('click', resetShape);
+        // Reset player points to initial circle
+        function resetPoints() {
+            points = generateInitialPoints();
+            smoothPoints = points.map(p => ({ ...p }));
+        }
 
+        // Calculate accuracy
+        function calculateAccuracy() {
+            let totalDistance = 0;
+            let maxPossibleDistance = 0;
+            
+            for (let i = 0; i < NUM_POINTS; i++) {
+                const dx = smoothPoints[i].x - targetPoints[i].x;
+                const dy = smoothPoints[i].y - targetPoints[i].y;
+                totalDistance += Math.sqrt(dx * dx + dy * dy);
+                maxPossibleDistance += targetBaseSize * 2; // Use target size for accuracy calc
+            }
+            
+            const accuracy = Math.max(0, 1 - (totalDistance / maxPossibleDistance));
+            return accuracy;
+        }
+
+        // Calculate round score - accuracy is CRITICAL
+        // Below 50% accuracy = 0 points
+        // Uses exponential curve so low accuracy = very few points
+        // Example: 100% acc = 10000, 80% acc = 5120, 60% acc = 2160, 50% acc = 1250, below 50% = 0
+        function calculateRoundScore(accuracy, timeElapsed) {
+            // No points for sloppy submissions
+            if (accuracy < MIN_ACCURACY_THRESHOLD) {
+                return 0;
+            }
+            
+            // Exponential accuracy scoring (accuracy^3)
+            // This heavily rewards high accuracy and punishes low accuracy
+            const accuracyScore = Math.pow(accuracy, ACCURACY_POWER) * MAX_ROUND_SCORE;
+            
+            // Time bonus instead of penalty - faster = more points, but accuracy is king
+            const maxTimeBonus = 2000;
+            const timeBonus = Math.max(0, maxTimeBonus - (timeElapsed * TIME_PENALTY_PER_SECOND));
+            
+            const finalScore = Math.round(accuracyScore + timeBonus);
+            return finalScore;
+        }
+
+        // Start a new game
+        function startGame() {
+            soundEngine.init();
+            soundEngine.startMusic();
+            
+            gameState.active = true;
+            gameState.currentRound = 1;
+            gameState.totalScore = 0;
+            gameState.roundScores = [];
+            gameOverOverlay.classList.remove('visible');
+            startNewRound();
+        }
+
+        // Start a new round
+        function startNewRound() {
+            resetPoints();
+            targetPoints = generateRandomTargetShape();
+            gameState.roundStartTime = Date.now();
+            
+            soundEngine.playRoundStart();
+            
+            roundTransition.textContent = `ROUND ${gameState.currentRound}`;
+            roundTransition.classList.add('visible');
+            setTimeout(() => {
+                roundTransition.classList.remove('visible');
+            }, 1500);
+            
+            updateUI();
+        }
+
+        // Submit current shape
+        function submitShape() {
+            if (!gameState.active) return;
+            
+            const accuracy = calculateAccuracy();
+            const timeElapsed = (Date.now() - gameState.roundStartTime) / 1000;
+            const roundScore = calculateRoundScore(accuracy, timeElapsed);
+            
+            soundEngine.playSubmit();
+            
+            gameState.roundScores.push(roundScore);
+            gameState.totalScore += roundScore;
+            
+            matchIndicator.textContent = `+${roundScore} pts!`;
+            matchIndicator.classList.add('visible');
+            setTimeout(() => {
+                matchIndicator.classList.remove('visible');
+            }, 1500);
+            
+            if (gameState.currentRound < TOTAL_ROUNDS) {
+                gameState.currentRound++;
+                setTimeout(() => startNewRound(), 1500);
+            } else {
+                endGame();
+            }
+            
+            updateUI();
+        }
+
+        // End the game
+        function endGame() {
+            gameState.active = false;
+            soundEngine.stopMusic();
+            soundEngine.playGameOver();
+            
+            roundScoresEl.innerHTML = '';
+            gameState.roundScores.forEach((score, i) => {
+                const item = document.createElement('div');
+                item.className = 'round-score-item';
+                item.innerHTML = `
+                    <div class="round-num">Round ${i + 1}</div>
+                    <div class="round-pts">${score}</div>
+                `;
+                roundScoresEl.appendChild(item);
+            });
+            
+            finalScoreEl.textContent = gameState.totalScore;
+            gameOverOverlay.classList.add('visible');
+        }
+
+        // Update UI elements
+        function updateUI() {
+            roundDisplay.textContent = `${gameState.currentRound} / ${TOTAL_ROUNDS}`;
+            totalScoreDisplay.textContent = gameState.totalScore;
+            
+            if (gameState.active) {
+                const elapsed = (Date.now() - gameState.roundStartTime) / 1000;
+                timerDisplay.textContent = elapsed.toFixed(1) + 's';
+                
+                const accuracy = calculateAccuracy();
+                const currentRoundScore = calculateRoundScore(accuracy, elapsed);
+                roundScoreDisplay.textContent = currentRoundScore;
+                
+                accuracyFill.style.width = (accuracy * 100) + '%';
+                accuracyValue.textContent = Math.round(accuracy * 100) + '%';
+                
+                // Play tick sound for high accuracy
+                if (accuracy > 0.85) {
+                    soundEngine.playHighAccuracy();
+                }
+            }
+        }
+
+        // Sound button handler
+        soundBtn.addEventListener('click', () => {
+            soundEngine.init();
+            const muted = soundEngine.toggleMute();
+            soundBtn.textContent = muted ? '🔇 Sound OFF' : '🔊 Sound ON';
+            soundBtn.classList.toggle('muted', muted);
+        });
+
+        // Event listeners for buttons
+        resetBtn.addEventListener('click', resetPoints);
+        startBtn.addEventListener('click', startGame);
+        submitBtn.addEventListener('click', submitShape);
+        playAgainBtn.addEventListener('click', startGame);
+
+        // Distance utility
         function getDistance(p1, p2) {
             return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
         }
 
-        // Find nearest corner to a point
-        function findNearestCorner(x, y, excludeCorner = -1) {
+        // Find nearest point to a position
+        function findNearestPoint(x, y, excludePoint = -1) {
             let nearest = -1;
             let minDist = grabRadius;
 
-            for (let i = 0; i < corners.length; i++) {
-                if (i === excludeCorner) continue;
-                const dist = getDistance({ x, y }, corners[i]);
+            for (let i = 0; i < points.length; i++) {
+                if (i === excludePoint) continue;
+                const dist = getDistance({ x, y }, smoothPoints[i]);
                 if (dist < minDist) {
                     minDist = dist;
                     nearest = i;
@@ -562,166 +1332,206 @@
             return nearest;
         }
 
-        // Draw the stretchy shape
-        function drawShape() {
-            // Smooth corner movement
-            for (let i = 0; i < corners.length; i++) {
-                corners[i].x += (targetCorners[i].x - corners[i].x) * 0.3;
-                corners[i].y += (targetCorners[i].y - corners[i].y) * 0.3;
+        // Draw the shapes
+        function drawShapes() {
+            for (let i = 0; i < points.length; i++) {
+                smoothPoints[i].x += (points[i].x - smoothPoints[i].x) * 0.3;
+                smoothPoints[i].y += (points[i].y - smoothPoints[i].y) * 0.3;
             }
 
             shapeCtx.clearRect(0, 0, shapeCanvas.width, shapeCanvas.height);
 
-            // Calculate center of shape
-            const shapeCenterX = (corners[0].x + corners[1].x + corners[2].x + corners[3].x) / 4;
-            const shapeCenterY = (corners[0].y + corners[1].y + corners[2].y + corners[3].y) / 4;
+            if (gameState.active) {
+                drawTargetShape();
+            }
 
-            // Draw glow effect
+            drawPlayerShape();
+            drawControlPoints();
+
+            if (leftHand.grabbedPoint >= 0) {
+                drawStretchLine(leftHand.x, leftHand.y, smoothPoints[leftHand.grabbedPoint], '#00f5ff');
+            }
+            if (rightHand.grabbedPoint >= 0) {
+                drawStretchLine(rightHand.x, rightHand.y, smoothPoints[rightHand.grabbedPoint], '#00ff88');
+            }
+        }
+
+        // Draw the target shape
+        function drawTargetShape() {
             shapeCtx.save();
-            shapeCtx.shadowBlur = 50;
+            
+            shapeCtx.setLineDash([15, 10]);
+            shapeCtx.strokeStyle = 'rgba(255, 0, 255, 0.6)';
+            shapeCtx.lineWidth = 4;
+            shapeCtx.shadowBlur = 20;
             shapeCtx.shadowColor = '#ff00ff';
 
-            // Create gradient for shape fill
-            const gradient = shapeCtx.createRadialGradient(
-                shapeCenterX, shapeCenterY, 0,
-                shapeCenterX, shapeCenterY, baseSize
-            );
-            gradient.addColorStop(0, 'rgba(255, 0, 255, 0.9)');
-            gradient.addColorStop(0.5, 'rgba(139, 0, 139, 0.8)');
-            gradient.addColorStop(1, 'rgba(75, 0, 130, 0.7)');
-
-            // Draw main shape with curved edges for stretchy look
             shapeCtx.beginPath();
-            
-            // Use bezier curves for stretchy appearance
-            const tension = 0.3;
-            
-            for (let i = 0; i < corners.length; i++) {
-                const curr = corners[i];
-                const next = corners[(i + 1) % corners.length];
-                const prev = corners[(i - 1 + corners.length) % corners.length];
-                const nextNext = corners[(i + 2) % corners.length];
+            for (let i = 0; i <= NUM_POINTS; i++) {
+                const curr = targetPoints[i % NUM_POINTS];
+                const next = targetPoints[(i + 1) % NUM_POINTS];
+                const prev = targetPoints[(i - 1 + NUM_POINTS) % NUM_POINTS];
 
                 if (i === 0) {
                     shapeCtx.moveTo(curr.x, curr.y);
+                } else {
+                    const cp1x = prev.x + (curr.x - targetPoints[(i - 2 + NUM_POINTS) % NUM_POINTS].x) * 0.2;
+                    const cp1y = prev.y + (curr.y - targetPoints[(i - 2 + NUM_POINTS) % NUM_POINTS].y) * 0.2;
+                    const cp2x = curr.x - (next.x - prev.x) * 0.2;
+                    const cp2y = curr.y - (next.y - prev.y) * 0.2;
+                    shapeCtx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, curr.x, curr.y);
                 }
-
-                // Control points for bezier curve
-                const cp1x = curr.x + (next.x - prev.x) * tension;
-                const cp1y = curr.y + (next.y - prev.y) * tension;
-                const cp2x = next.x - (nextNext.x - curr.x) * tension;
-                const cp2y = next.y - (nextNext.y - curr.y) * tension;
-
-                shapeCtx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, next.x, next.y);
             }
+            shapeCtx.closePath();
+            shapeCtx.stroke();
 
+            shapeCtx.setLineDash([]);
+            targetPoints.forEach((point, i) => {
+                shapeCtx.beginPath();
+                shapeCtx.arc(point.x, point.y, 8, 0, Math.PI * 2);
+                shapeCtx.strokeStyle = 'rgba(255, 0, 255, 0.5)';
+                shapeCtx.lineWidth = 2;
+                shapeCtx.stroke();
+            });
+
+            shapeCtx.restore();
+        }
+
+        // Draw the player's shape
+        function drawPlayerShape() {
+            let shapeCenterX = 0, shapeCenterY = 0;
+            smoothPoints.forEach(p => {
+                shapeCenterX += p.x;
+                shapeCenterY += p.y;
+            });
+            shapeCenterX /= NUM_POINTS;
+            shapeCenterY /= NUM_POINTS;
+
+            shapeCtx.save();
+            shapeCtx.shadowBlur = 40;
+            shapeCtx.shadowColor = '#00f5ff';
+
+            const gradient = shapeCtx.createRadialGradient(
+                shapeCenterX, shapeCenterY, 0,
+                shapeCenterX, shapeCenterY, baseSize * 1.5
+            );
+            gradient.addColorStop(0, 'rgba(0, 245, 255, 0.8)');
+            gradient.addColorStop(0.5, 'rgba(0, 100, 200, 0.6)');
+            gradient.addColorStop(1, 'rgba(75, 0, 130, 0.4)');
+
+            shapeCtx.beginPath();
+            for (let i = 0; i <= NUM_POINTS; i++) {
+                const curr = smoothPoints[i % NUM_POINTS];
+                const next = smoothPoints[(i + 1) % NUM_POINTS];
+                const prev = smoothPoints[(i - 1 + NUM_POINTS) % NUM_POINTS];
+
+                if (i === 0) {
+                    shapeCtx.moveTo(curr.x, curr.y);
+                } else {
+                    const cp1x = prev.x + (curr.x - smoothPoints[(i - 2 + NUM_POINTS) % NUM_POINTS].x) * 0.2;
+                    const cp1y = prev.y + (curr.y - smoothPoints[(i - 2 + NUM_POINTS) % NUM_POINTS].y) * 0.2;
+                    const cp2x = curr.x - (next.x - prev.x) * 0.2;
+                    const cp2y = curr.y - (next.y - prev.y) * 0.2;
+                    shapeCtx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, curr.x, curr.y);
+                }
+            }
             shapeCtx.closePath();
             shapeCtx.fillStyle = gradient;
             shapeCtx.fill();
 
-            // Draw border
-            shapeCtx.strokeStyle = '#ff00ff';
-            shapeCtx.lineWidth = 4;
+            shapeCtx.strokeStyle = '#00f5ff';
+            shapeCtx.lineWidth = 3;
             shapeCtx.stroke();
 
             shapeCtx.restore();
 
-            // Draw inner highlight
             shapeCtx.save();
-            shapeCtx.globalAlpha = 0.4;
-            
+            shapeCtx.globalAlpha = 0.3;
             const innerGradient = shapeCtx.createRadialGradient(
                 shapeCenterX - baseSize * 0.15, shapeCenterY - baseSize * 0.15, 0,
-                shapeCenterX, shapeCenterY, baseSize * 0.5
+                shapeCenterX, shapeCenterY, baseSize * 0.4
             );
             innerGradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
-            innerGradient.addColorStop(0.5, 'rgba(0, 245, 255, 0.3)');
             innerGradient.addColorStop(1, 'rgba(0, 245, 255, 0)');
-
             shapeCtx.beginPath();
-            shapeCtx.arc(shapeCenterX - baseSize * 0.1, shapeCenterY - baseSize * 0.1, baseSize * 0.25, 0, Math.PI * 2);
+            shapeCtx.arc(shapeCenterX - baseSize * 0.1, shapeCenterY - baseSize * 0.1, baseSize * 0.2, 0, Math.PI * 2);
             shapeCtx.fillStyle = innerGradient;
             shapeCtx.fill();
             shapeCtx.restore();
+        }
 
-            // Draw corner handles
-            const cornerColors = ['#00f5ff', '#00ff88', '#fff000', '#ff6600'];
-            const cornerLabels = ['TL', 'TR', 'BR', 'BL'];
+        // Draw control points
+        function drawControlPoints() {
+            const pointColors = [
+                '#00f5ff', '#00ff88', '#fff000', '#ff6600',
+                '#ff00ff', '#aa00ff', '#0066ff', '#ff3366',
+                '#00ffcc', '#ffaa00', '#ff0066', '#66ff00'
+            ];
 
-            corners.forEach((corner, i) => {
-                const isGrabbedLeft = leftHand.grabbedCorner === i;
-                const isGrabbedRight = rightHand.grabbedCorner === i;
+            smoothPoints.forEach((point, i) => {
+                const isGrabbedLeft = leftHand.grabbedPoint === i;
+                const isGrabbedRight = rightHand.grabbedPoint === i;
                 const isGrabbed = isGrabbedLeft || isGrabbedRight;
 
-                // Draw grab radius indicator
                 shapeCtx.save();
                 shapeCtx.beginPath();
-                shapeCtx.arc(corner.x, corner.y, grabRadius, 0, Math.PI * 2);
-                shapeCtx.strokeStyle = isGrabbed ? 'rgba(255, 0, 255, 0.5)' : 'rgba(255, 255, 255, 0.1)';
-                shapeCtx.lineWidth = 2;
-                shapeCtx.setLineDash([5, 5]);
+                shapeCtx.arc(point.x, point.y, grabRadius, 0, Math.PI * 2);
+                shapeCtx.strokeStyle = isGrabbed ? 'rgba(255, 0, 255, 0.4)' : 'rgba(255, 255, 255, 0.08)';
+                shapeCtx.lineWidth = 1;
+                shapeCtx.setLineDash([4, 4]);
                 shapeCtx.stroke();
                 shapeCtx.restore();
 
-                // Draw corner point
                 shapeCtx.save();
-                shapeCtx.shadowBlur = isGrabbed ? 30 : 15;
-                shapeCtx.shadowColor = cornerColors[i];
+                shapeCtx.shadowBlur = isGrabbed ? 25 : 12;
+                shapeCtx.shadowColor = pointColors[i];
 
                 shapeCtx.beginPath();
-                shapeCtx.arc(corner.x, corner.y, isGrabbed ? 20 : 15, 0, Math.PI * 2);
+                shapeCtx.arc(point.x, point.y, isGrabbed ? 16 : 12, 0, Math.PI * 2);
                 
                 if (isGrabbed) {
                     shapeCtx.fillStyle = '#ff00ff';
                     shapeCtx.shadowColor = '#ff00ff';
                 } else {
-                    shapeCtx.fillStyle = cornerColors[i];
+                    shapeCtx.fillStyle = pointColors[i];
                 }
                 shapeCtx.fill();
 
-                // Corner label
-                shapeCtx.fillStyle = isGrabbed ? '#fff' : 'rgba(0,0,0,0.7)';
-                shapeCtx.font = 'bold 10px Orbitron';
+                shapeCtx.fillStyle = isGrabbed ? '#fff' : 'rgba(0,0,0,0.8)';
+                shapeCtx.font = 'bold 9px Orbitron';
                 shapeCtx.textAlign = 'center';
                 shapeCtx.textBaseline = 'middle';
-                shapeCtx.fillText(cornerLabels[i], corner.x, corner.y);
+                shapeCtx.fillText((i + 1).toString(), point.x, point.y);
 
                 shapeCtx.restore();
             });
-
-            // Draw stretch lines when grabbing
-            if (leftHand.grabbedCorner >= 0) {
-                drawStretchLine(leftHand.x, leftHand.y, corners[leftHand.grabbedCorner], '#00f5ff');
-            }
-            if (rightHand.grabbedCorner >= 0) {
-                drawStretchLine(rightHand.x, rightHand.y, corners[rightHand.grabbedCorner], '#00ff88');
-            }
         }
 
-        function drawStretchLine(handX, handY, corner, color) {
+        // Draw stretch line
+        function drawStretchLine(handX, handY, point, color) {
             shapeCtx.save();
             shapeCtx.beginPath();
             shapeCtx.moveTo(handX, handY);
-            shapeCtx.lineTo(corner.x, corner.y);
+            shapeCtx.lineTo(point.x, point.y);
             shapeCtx.strokeStyle = color;
-            shapeCtx.lineWidth = 3;
-            shapeCtx.setLineDash([10, 5]);
-            shapeCtx.shadowBlur = 10;
+            shapeCtx.lineWidth = 2;
+            shapeCtx.setLineDash([8, 4]);
+            shapeCtx.shadowBlur = 8;
             shapeCtx.shadowColor = color;
             shapeCtx.stroke();
             shapeCtx.restore();
         }
 
+        // Draw hand landmarks
         function drawHandLandmarks(landmarks, handedness) {
             const isLeft = handedness === 'Left';
-            const color = isLeft ? 'rgba(0, 245, 255, 0.6)' : 'rgba(0, 255, 136, 0.6)';
+            const color = isLeft ? 'rgba(0, 245, 255, 0.5)' : 'rgba(0, 255, 136, 0.5)';
             const highlightColor = isLeft ? '#00f5ff' : '#00ff88';
 
             handCtx.save();
-            handCtx.shadowBlur = 12;
+            handCtx.shadowBlur = 10;
             handCtx.shadowColor = highlightColor;
 
-            // Draw connections
             const connections = [
                 [0, 1], [1, 2], [2, 3], [3, 4],
                 [0, 5], [5, 6], [6, 7], [7, 8],
@@ -743,13 +1553,12 @@
                 handCtx.stroke();
             });
 
-            // Draw landmarks
             landmarks.forEach((landmark, index) => {
                 const x = landmark.x * handCanvas.width;
                 const y = landmark.y * handCanvas.height;
 
                 handCtx.beginPath();
-                handCtx.arc(x, y, index === 8 || index === 4 ? 8 : 4, 0, 2 * Math.PI);
+                handCtx.arc(x, y, index === 8 || index === 4 ? 7 : 3, 0, 2 * Math.PI);
                 if (index === 8) {
                     handCtx.fillStyle = '#ff00ff';
                 } else if (index === 4) {
@@ -763,14 +1572,14 @@
             handCtx.restore();
         }
 
+        // Process hand tracking results
         function onResults(results) {
-            // Clear hand canvas
             handCtx.clearRect(0, 0, handCanvas.width, handCanvas.height);
 
-            // Reset detection states (but keep grabbed corners if still pinching)
-            const prevLeftPinching = leftHand.pinching;
-            const prevRightPinching = rightHand.pinching;
-            
+            // Store previous grab states for sound triggers
+            prevLeftGrabbed = leftHand.grabbedPoint;
+            prevRightGrabbed = rightHand.grabbedPoint;
+
             leftHand.detected = false;
             rightHand.detected = false;
             leftHand.pinching = false;
@@ -779,7 +1588,6 @@
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 for (let i = 0; i < results.multiHandLandmarks.length; i++) {
                     const landmarks = results.multiHandLandmarks[i];
-                    // MediaPipe returns handedness from camera's perspective, flip it
                     const handedness = results.multiHandedness[i].label === 'Left' ? 'Right' : 'Left';
 
                     drawHandLandmarks(landmarks, handedness);
@@ -787,11 +1595,9 @@
                     const indexTip = landmarks[8];
                     const thumbTip = landmarks[4];
 
-                    // Convert to screen coordinates (mirrored)
                     const fingerX = (1 - indexTip.x) * handCanvas.width;
                     const fingerY = indexTip.y * handCanvas.height;
 
-                    // Check pinch
                     const pinchDistance = getDistance(
                         { x: indexTip.x * handCanvas.width, y: indexTip.y * handCanvas.height },
                         { x: thumbTip.x * handCanvas.width, y: thumbTip.y * handCanvas.height }
@@ -805,27 +1611,31 @@
                         leftHand.pinching = isPinching;
 
                         fingerCursorLeft.style.display = 'block';
-                        fingerCursorLeft.style.left = (fingerX - 25) + 'px';
-                        fingerCursorLeft.style.top = (fingerY - 25) + 'px';
+                        fingerCursorLeft.style.left = (fingerX - 22) + 'px';
+                        fingerCursorLeft.style.top = (fingerY - 22) + 'px';
 
-                        // Handle grabbing
                         if (isPinching) {
-                            if (leftHand.grabbedCorner < 0) {
-                                // Try to grab a corner (not already grabbed by right hand)
-                                leftHand.grabbedCorner = findNearestCorner(fingerX, fingerY, rightHand.grabbedCorner);
+                            if (leftHand.grabbedPoint < 0) {
+                                leftHand.grabbedPoint = findNearestPoint(fingerX, fingerY, rightHand.grabbedPoint);
+                                // Play grab sound
+                                if (leftHand.grabbedPoint >= 0 && prevLeftGrabbed < 0) {
+                                    soundEngine.playGrab();
+                                }
                             }
-                            if (leftHand.grabbedCorner >= 0) {
-                                // Move the grabbed corner
-                                targetCorners[leftHand.grabbedCorner].x = fingerX;
-                                targetCorners[leftHand.grabbedCorner].y = fingerY;
+                            if (leftHand.grabbedPoint >= 0) {
+                                points[leftHand.grabbedPoint].x = fingerX;
+                                points[leftHand.grabbedPoint].y = fingerY;
                             }
                         } else {
-                            leftHand.grabbedCorner = -1;
+                            // Play release sound
+                            if (leftHand.grabbedPoint >= 0) {
+                                soundEngine.playRelease();
+                            }
+                            leftHand.grabbedPoint = -1;
                         }
 
-                        // Update cursor classes
-                        fingerCursorLeft.classList.toggle('pinching', isPinching && leftHand.grabbedCorner < 0);
-                        fingerCursorLeft.classList.toggle('grabbing', leftHand.grabbedCorner >= 0);
+                        fingerCursorLeft.classList.toggle('pinching', isPinching && leftHand.grabbedPoint < 0);
+                        fingerCursorLeft.classList.toggle('grabbing', leftHand.grabbedPoint >= 0);
 
                     } else {
                         rightHand.detected = true;
@@ -834,44 +1644,58 @@
                         rightHand.pinching = isPinching;
 
                         fingerCursorRight.style.display = 'block';
-                        fingerCursorRight.style.left = (fingerX - 25) + 'px';
-                        fingerCursorRight.style.top = (fingerY - 25) + 'px';
+                        fingerCursorRight.style.left = (fingerX - 22) + 'px';
+                        fingerCursorRight.style.top = (fingerY - 22) + 'px';
 
-                        // Handle grabbing
                         if (isPinching) {
-                            if (rightHand.grabbedCorner < 0) {
-                                // Try to grab a corner (not already grabbed by left hand)
-                                rightHand.grabbedCorner = findNearestCorner(fingerX, fingerY, leftHand.grabbedCorner);
+                            if (rightHand.grabbedPoint < 0) {
+                                rightHand.grabbedPoint = findNearestPoint(fingerX, fingerY, leftHand.grabbedPoint);
+                                // Play grab sound
+                                if (rightHand.grabbedPoint >= 0 && prevRightGrabbed < 0) {
+                                    soundEngine.playGrab();
+                                }
                             }
-                            if (rightHand.grabbedCorner >= 0) {
-                                // Move the grabbed corner
-                                targetCorners[rightHand.grabbedCorner].x = fingerX;
-                                targetCorners[rightHand.grabbedCorner].y = fingerY;
+                            if (rightHand.grabbedPoint >= 0) {
+                                points[rightHand.grabbedPoint].x = fingerX;
+                                points[rightHand.grabbedPoint].y = fingerY;
                             }
                         } else {
-                            rightHand.grabbedCorner = -1;
+                            // Play release sound
+                            if (rightHand.grabbedPoint >= 0) {
+                                soundEngine.playRelease();
+                            }
+                            rightHand.grabbedPoint = -1;
                         }
 
-                        // Update cursor classes
-                        fingerCursorRight.classList.toggle('pinching', isPinching && rightHand.grabbedCorner < 0);
-                        fingerCursorRight.classList.toggle('grabbing', rightHand.grabbedCorner >= 0);
+                        fingerCursorRight.classList.toggle('pinching', isPinching && rightHand.grabbedPoint < 0);
+                        fingerCursorRight.classList.toggle('grabbing', rightHand.grabbedPoint >= 0);
                     }
                 }
             }
 
-            // Hide cursors for undetected hands
             if (!leftHand.detected) {
                 fingerCursorLeft.style.display = 'none';
-                leftHand.grabbedCorner = -1;
+                if (leftHand.grabbedPoint >= 0) soundEngine.playRelease();
+                leftHand.grabbedPoint = -1;
             }
             if (!rightHand.detected) {
                 fingerCursorRight.style.display = 'none';
-                rightHand.grabbedCorner = -1;
+                if (rightHand.grabbedPoint >= 0) soundEngine.playRelease();
+                rightHand.grabbedPoint = -1;
             }
 
-            // Update status
+            updateHandStatus();
+            drawShapes();
+
+            if (gameState.active) {
+                updateUI();
+            }
+        }
+
+        // Update hand status display
+        function updateHandStatus() {
             if (leftHand.detected) {
-                if (leftHand.grabbedCorner >= 0) {
+                if (leftHand.grabbedPoint >= 0) {
                     leftHandStatus.textContent = 'GRAB';
                     leftHandStatus.classList.add('active');
                 } else if (leftHand.pinching) {
@@ -887,7 +1711,7 @@
             }
 
             if (rightHand.detected) {
-                if (rightHand.grabbedCorner >= 0) {
+                if (rightHand.grabbedPoint >= 0) {
                     rightHandStatus.textContent = 'GRAB';
                     rightHandStatus.classList.add('active');
                 } else if (rightHand.pinching) {
@@ -902,9 +1726,8 @@
                 rightHandStatus.classList.remove('active');
             }
 
-            // Mode status
-            const bothGrabbing = leftHand.grabbedCorner >= 0 && rightHand.grabbedCorner >= 0;
-            const oneGrabbing = leftHand.grabbedCorner >= 0 || rightHand.grabbedCorner >= 0;
+            const bothGrabbing = leftHand.grabbedPoint >= 0 && rightHand.grabbedPoint >= 0;
+            const oneGrabbing = leftHand.grabbedPoint >= 0 || rightHand.grabbedPoint >= 0;
 
             if (bothGrabbing) {
                 modeStatus.textContent = 'STRETCH!';
@@ -916,9 +1739,6 @@
                 modeStatus.textContent = 'IDLE';
                 modeStatus.classList.remove('active');
             }
-
-            // Draw shape
-            drawShape();
         }
 
         // Initialize MediaPipe Hands
@@ -937,9 +1757,12 @@
 
         hands.onResults(onResults);
 
-        // Animation loop for smooth shape rendering
+        // Animation loop
         function animate() {
-            drawShape();
+            drawShapes();
+            if (gameState.active) {
+                updateUI();
+            }
             requestAnimationFrame(animate);
         }
 
@@ -955,6 +1778,7 @@
         camera.start().then(() => {
             setTimeout(() => {
                 loadingOverlay.classList.add('hidden');
+                animate();
             }, 1500);
         }).catch(err => {
             console.error('Camera error:', err);
