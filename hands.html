@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stretchy Shape - Dual Hand Control</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-cyan: #00f5ff;
+            --neon-magenta: #ff00ff;
+            --neon-yellow: #fff000;
+            --neon-green: #00ff88;
+            --neon-orange: #ff6600;
+            --dark-bg: #0a0a0f;
+            --grid-color: rgba(0, 245, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--dark-bg);
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated grid background */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes gridMove {
+            0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
+            100% { transform: perspective(500px) rotateX(60deg) translateY(50px); }
+        }
+
+        /* Scanline effect */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.1) 2px,
+                rgba(0, 0, 0, 0.1) 4px
+            );
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* Title overlay */
+        .title-overlay {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 200;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(1.2rem, 3vw, 2rem);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: titleGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes titleGlow {
+            from { filter: drop-shadow(0 0 10px var(--neon-cyan)); }
+            to { filter: drop-shadow(0 0 30px var(--neon-magenta)); }
+        }
+
+        .subtitle {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 0.5em;
+            text-transform: uppercase;
+        }
+
+        /* Full screen video container */
+        .video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        video, #hand-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        video {
+            opacity: 0.4;
+        }
+
+        #hand-canvas {
+            z-index: 2;
+        }
+
+        /* Shape canvas - for drawing the stretchy shape */
+        #shape-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 50;
+            pointer-events: none;
+        }
+
+        /* Finger cursors for each hand */
+        .finger-cursor {
+            position: fixed;
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--neon-cyan);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 60;
+            transition: all 0.05s ease-out;
+            box-shadow: 0 0 15px var(--neon-cyan);
+            display: none;
+        }
+
+        .finger-cursor::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            background: var(--neon-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        /* Left hand cursor - cyan */
+        .finger-cursor.left {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 20px var(--neon-cyan);
+        }
+
+        .finger-cursor.left::after {
+            background: var(--neon-cyan);
+        }
+
+        .finger-cursor.left::before {
+            content: 'L';
+            position: absolute;
+            top: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Orbitron', monospace;
+            font-size: 14px;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        /* Right hand cursor - green */
+        .finger-cursor.right {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 20px var(--neon-green);
+        }
+
+        .finger-cursor.right::after {
+            background: var(--neon-green);
+        }
+
+        .finger-cursor.right::before {
+            content: 'R';
+            position: absolute;
+            top: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Orbitron', monospace;
+            font-size: 14px;
+            color: var(--neon-green);
+            text-shadow: 0 0 10px var(--neon-green);
+        }
+
+        .finger-cursor.pinching {
+            border-color: var(--neon-yellow);
+            box-shadow: 0 0 30px var(--neon-yellow);
+            transform: scale(0.8);
+        }
+
+        .finger-cursor.pinching::after {
+            background: var(--neon-yellow);
+            box-shadow: 0 0 20px var(--neon-yellow);
+        }
+
+        .finger-cursor.grabbing {
+            border-color: var(--neon-magenta);
+            box-shadow: 0 0 35px var(--neon-magenta), 0 0 60px var(--neon-magenta);
+            transform: scale(1.2);
+            animation: grabPulse 0.3s ease-in-out infinite;
+        }
+
+        .finger-cursor.grabbing::after {
+            background: var(--neon-magenta);
+        }
+
+        @keyframes grabPulse {
+            0%, 100% { transform: scale(1.2); }
+            50% { transform: scale(1.3); }
+        }
+
+        /* Status panel */
+        .status-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 10, 15, 0.9);
+            border: 1px solid var(--neon-cyan);
+            border-radius: 10px;
+            padding: 15px 30px;
+            display: flex;
+            gap: 25px;
+            z-index: 200;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-label {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+
+        .status-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.85rem;
+            color: var(--neon-cyan);
+        }
+
+        .status-value.active {
+            color: var(--neon-yellow);
+        }
+
+        .status-value.left-active {
+            color: var(--neon-cyan);
+        }
+
+        .status-value.right-active {
+            color: var(--neon-green);
+        }
+
+        /* Loading state */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--dark-bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader {
+            width: 100px;
+            height: 100px;
+            border: 4px solid transparent;
+            border-top-color: var(--neon-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .loader::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border: 4px solid transparent;
+            border-top-color: var(--neon-magenta);
+            border-radius: 50%;
+            animation: spin 0.5s linear infinite reverse;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            color: var(--neon-cyan);
+            letter-spacing: 0.3em;
+            animation: blink 1s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.5; }
+        }
+
+        /* Instructions */
+        .instructions {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: rgba(10, 10, 15, 0.9);
+            border: 1px solid rgba(0, 245, 255, 0.3);
+            border-radius: 10px;
+            padding: 15px 20px;
+            max-width: 300px;
+            z-index: 200;
+            backdrop-filter: blur(10px);
+        }
+
+        .instructions h3 {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.75rem;
+            color: var(--neon-cyan);
+            margin-bottom: 10px;
+            letter-spacing: 0.1em;
+        }
+
+        .instructions p {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .instructions .highlight-cyan {
+            color: var(--neon-cyan);
+            font-weight: 700;
+        }
+
+        .instructions .highlight-green {
+            color: var(--neon-green);
+            font-weight: 700;
+        }
+
+        .instructions .highlight-magenta {
+            color: var(--neon-magenta);
+            font-weight: 700;
+        }
+
+        /* Reset button */
+        .reset-btn {
+            position: fixed;
+            top: 100px;
+            left: 20px;
+            background: rgba(10, 10, 15, 0.9);
+            border: 2px solid var(--neon-magenta);
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.8rem;
+            color: var(--neon-magenta);
+            cursor: pointer;
+            z-index: 200;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .reset-btn:hover {
+            background: var(--neon-magenta);
+            color: var(--dark-bg);
+            box-shadow: 0 0 30px var(--neon-magenta);
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+    <div class="scanlines"></div>
+
+    <div class="loading-overlay" id="loading">
+        <div class="loader"></div>
+        <div class="loading-text">INITIALIZING STRETCHY MODE</div>
+    </div>
+
+    <div class="title-overlay">
+        <h1>Stretchy Shape</h1>
+        <p class="subtitle">Pull &amp; Deform with Both Hands</p>
+    </div>
+
+    <div class="video-container">
+        <video id="webcam" autoplay playsinline></video>
+        <canvas id="hand-canvas"></canvas>
+    </div>
+
+    <!-- Canvas for the stretchy shape -->
+    <canvas id="shape-canvas"></canvas>
+
+    <!-- Finger cursors for each hand -->
+    <div class="finger-cursor left" id="finger-cursor-left"></div>
+    <div class="finger-cursor right" id="finger-cursor-right"></div>
+
+    <button class="reset-btn" id="reset-btn">Reset Shape</button>
+
+    <div class="instructions">
+        <h3>// How to Stretch</h3>
+        <p>Show <span class="highlight-cyan">both hands</span> to the camera.</p>
+        <p><span class="highlight-magenta">Pinch</span> near a <span class="highlight-magenta">corner</span> to grab it!</p>
+        <p>Each hand can grab a different corner - stretch it into <span class="highlight-cyan">crazy shapes!</span></p>
+        <p>The shape is like <span class="highlight-green">silly putty</span> - pull, stretch, and squish it!</p>
+    </div>
+
+    <div class="status-panel">
+        <div class="status-item">
+            <span class="status-label">Left Hand</span>
+            <span class="status-value" id="left-hand-status">--</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Right Hand</span>
+            <span class="status-value" id="right-hand-status">--</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Mode</span>
+            <span class="status-value" id="mode-status">IDLE</span>
+        </div>
+    </div>
+
+    <script>
+        const videoElement = document.getElementById('webcam');
+        const handCanvas = document.getElementById('hand-canvas');
+        const handCtx = handCanvas.getContext('2d');
+        const shapeCanvas = document.getElementById('shape-canvas');
+        const shapeCtx = shapeCanvas.getContext('2d');
+        const fingerCursorLeft = document.getElementById('finger-cursor-left');
+        const fingerCursorRight = document.getElementById('finger-cursor-right');
+        const loadingOverlay = document.getElementById('loading');
+        const resetBtn = document.getElementById('reset-btn');
+
+        const leftHandStatus = document.getElementById('left-hand-status');
+        const rightHandStatus = document.getElementById('right-hand-status');
+        const modeStatus = document.getElementById('mode-status');
+
+        // Shape corners (quadrilateral) - start as a square
+        // Order: top-left, top-right, bottom-right, bottom-left
+        let baseSize = Math.min(window.innerWidth, window.innerHeight) * 0.35;
+        let centerX = window.innerWidth / 2;
+        let centerY = window.innerHeight / 2;
+
+        let corners = [
+            { x: centerX - baseSize/2, y: centerY - baseSize/2 }, // top-left
+            { x: centerX + baseSize/2, y: centerY - baseSize/2 }, // top-right
+            { x: centerX + baseSize/2, y: centerY + baseSize/2 }, // bottom-right
+            { x: centerX - baseSize/2, y: centerY + baseSize/2 }  // bottom-left
+        ];
+
+        // For smooth animation
+        let targetCorners = corners.map(c => ({ ...c }));
+        
+        // Corner grab radius
+        const grabRadius = 80;
+
+        // Hand states
+        let leftHand = { detected: false, pinching: false, x: 0, y: 0, grabbedCorner: -1 };
+        let rightHand = { detected: false, pinching: false, x: 0, y: 0, grabbedCorner: -1 };
+
+        // Resize canvases
+        function resizeCanvases() {
+            handCanvas.width = window.innerWidth;
+            handCanvas.height = window.innerHeight;
+            shapeCanvas.width = window.innerWidth;
+            shapeCanvas.height = window.innerHeight;
+        }
+        resizeCanvases();
+        window.addEventListener('resize', resizeCanvases);
+
+        // Reset shape to square
+        function resetShape() {
+            baseSize = Math.min(window.innerWidth, window.innerHeight) * 0.35;
+            centerX = window.innerWidth / 2;
+            centerY = window.innerHeight / 2;
+
+            targetCorners = [
+                { x: centerX - baseSize/2, y: centerY - baseSize/2 },
+                { x: centerX + baseSize/2, y: centerY - baseSize/2 },
+                { x: centerX + baseSize/2, y: centerY + baseSize/2 },
+                { x: centerX - baseSize/2, y: centerY + baseSize/2 }
+            ];
+        }
+
+        resetBtn.addEventListener('click', resetShape);
+
+        function getDistance(p1, p2) {
+            return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+        }
+
+        // Find nearest corner to a point
+        function findNearestCorner(x, y, excludeCorner = -1) {
+            let nearest = -1;
+            let minDist = grabRadius;
+
+            for (let i = 0; i < corners.length; i++) {
+                if (i === excludeCorner) continue;
+                const dist = getDistance({ x, y }, corners[i]);
+                if (dist < minDist) {
+                    minDist = dist;
+                    nearest = i;
+                }
+            }
+            return nearest;
+        }
+
+        // Draw the stretchy shape
+        function drawShape() {
+            // Smooth corner movement
+            for (let i = 0; i < corners.length; i++) {
+                corners[i].x += (targetCorners[i].x - corners[i].x) * 0.3;
+                corners[i].y += (targetCorners[i].y - corners[i].y) * 0.3;
+            }
+
+            shapeCtx.clearRect(0, 0, shapeCanvas.width, shapeCanvas.height);
+
+            // Calculate center of shape
+            const shapeCenterX = (corners[0].x + corners[1].x + corners[2].x + corners[3].x) / 4;
+            const shapeCenterY = (corners[0].y + corners[1].y + corners[2].y + corners[3].y) / 4;
+
+            // Draw glow effect
+            shapeCtx.save();
+            shapeCtx.shadowBlur = 50;
+            shapeCtx.shadowColor = '#ff00ff';
+
+            // Create gradient for shape fill
+            const gradient = shapeCtx.createRadialGradient(
+                shapeCenterX, shapeCenterY, 0,
+                shapeCenterX, shapeCenterY, baseSize
+            );
+            gradient.addColorStop(0, 'rgba(255, 0, 255, 0.9)');
+            gradient.addColorStop(0.5, 'rgba(139, 0, 139, 0.8)');
+            gradient.addColorStop(1, 'rgba(75, 0, 130, 0.7)');
+
+            // Draw main shape with curved edges for stretchy look
+            shapeCtx.beginPath();
+            
+            // Use bezier curves for stretchy appearance
+            const tension = 0.3;
+            
+            for (let i = 0; i < corners.length; i++) {
+                const curr = corners[i];
+                const next = corners[(i + 1) % corners.length];
+                const prev = corners[(i - 1 + corners.length) % corners.length];
+                const nextNext = corners[(i + 2) % corners.length];
+
+                if (i === 0) {
+                    shapeCtx.moveTo(curr.x, curr.y);
+                }
+
+                // Control points for bezier curve
+                const cp1x = curr.x + (next.x - prev.x) * tension;
+                const cp1y = curr.y + (next.y - prev.y) * tension;
+                const cp2x = next.x - (nextNext.x - curr.x) * tension;
+                const cp2y = next.y - (nextNext.y - curr.y) * tension;
+
+                shapeCtx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, next.x, next.y);
+            }
+
+            shapeCtx.closePath();
+            shapeCtx.fillStyle = gradient;
+            shapeCtx.fill();
+
+            // Draw border
+            shapeCtx.strokeStyle = '#ff00ff';
+            shapeCtx.lineWidth = 4;
+            shapeCtx.stroke();
+
+            shapeCtx.restore();
+
+            // Draw inner highlight
+            shapeCtx.save();
+            shapeCtx.globalAlpha = 0.4;
+            
+            const innerGradient = shapeCtx.createRadialGradient(
+                shapeCenterX - baseSize * 0.15, shapeCenterY - baseSize * 0.15, 0,
+                shapeCenterX, shapeCenterY, baseSize * 0.5
+            );
+            innerGradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+            innerGradient.addColorStop(0.5, 'rgba(0, 245, 255, 0.3)');
+            innerGradient.addColorStop(1, 'rgba(0, 245, 255, 0)');
+
+            shapeCtx.beginPath();
+            shapeCtx.arc(shapeCenterX - baseSize * 0.1, shapeCenterY - baseSize * 0.1, baseSize * 0.25, 0, Math.PI * 2);
+            shapeCtx.fillStyle = innerGradient;
+            shapeCtx.fill();
+            shapeCtx.restore();
+
+            // Draw corner handles
+            const cornerColors = ['#00f5ff', '#00ff88', '#fff000', '#ff6600'];
+            const cornerLabels = ['TL', 'TR', 'BR', 'BL'];
+
+            corners.forEach((corner, i) => {
+                const isGrabbedLeft = leftHand.grabbedCorner === i;
+                const isGrabbedRight = rightHand.grabbedCorner === i;
+                const isGrabbed = isGrabbedLeft || isGrabbedRight;
+
+                // Draw grab radius indicator
+                shapeCtx.save();
+                shapeCtx.beginPath();
+                shapeCtx.arc(corner.x, corner.y, grabRadius, 0, Math.PI * 2);
+                shapeCtx.strokeStyle = isGrabbed ? 'rgba(255, 0, 255, 0.5)' : 'rgba(255, 255, 255, 0.1)';
+                shapeCtx.lineWidth = 2;
+                shapeCtx.setLineDash([5, 5]);
+                shapeCtx.stroke();
+                shapeCtx.restore();
+
+                // Draw corner point
+                shapeCtx.save();
+                shapeCtx.shadowBlur = isGrabbed ? 30 : 15;
+                shapeCtx.shadowColor = cornerColors[i];
+
+                shapeCtx.beginPath();
+                shapeCtx.arc(corner.x, corner.y, isGrabbed ? 20 : 15, 0, Math.PI * 2);
+                
+                if (isGrabbed) {
+                    shapeCtx.fillStyle = '#ff00ff';
+                    shapeCtx.shadowColor = '#ff00ff';
+                } else {
+                    shapeCtx.fillStyle = cornerColors[i];
+                }
+                shapeCtx.fill();
+
+                // Corner label
+                shapeCtx.fillStyle = isGrabbed ? '#fff' : 'rgba(0,0,0,0.7)';
+                shapeCtx.font = 'bold 10px Orbitron';
+                shapeCtx.textAlign = 'center';
+                shapeCtx.textBaseline = 'middle';
+                shapeCtx.fillText(cornerLabels[i], corner.x, corner.y);
+
+                shapeCtx.restore();
+            });
+
+            // Draw stretch lines when grabbing
+            if (leftHand.grabbedCorner >= 0) {
+                drawStretchLine(leftHand.x, leftHand.y, corners[leftHand.grabbedCorner], '#00f5ff');
+            }
+            if (rightHand.grabbedCorner >= 0) {
+                drawStretchLine(rightHand.x, rightHand.y, corners[rightHand.grabbedCorner], '#00ff88');
+            }
+        }
+
+        function drawStretchLine(handX, handY, corner, color) {
+            shapeCtx.save();
+            shapeCtx.beginPath();
+            shapeCtx.moveTo(handX, handY);
+            shapeCtx.lineTo(corner.x, corner.y);
+            shapeCtx.strokeStyle = color;
+            shapeCtx.lineWidth = 3;
+            shapeCtx.setLineDash([10, 5]);
+            shapeCtx.shadowBlur = 10;
+            shapeCtx.shadowColor = color;
+            shapeCtx.stroke();
+            shapeCtx.restore();
+        }
+
+        function drawHandLandmarks(landmarks, handedness) {
+            const isLeft = handedness === 'Left';
+            const color = isLeft ? 'rgba(0, 245, 255, 0.6)' : 'rgba(0, 255, 136, 0.6)';
+            const highlightColor = isLeft ? '#00f5ff' : '#00ff88';
+
+            handCtx.save();
+            handCtx.shadowBlur = 12;
+            handCtx.shadowColor = highlightColor;
+
+            // Draw connections
+            const connections = [
+                [0, 1], [1, 2], [2, 3], [3, 4],
+                [0, 5], [5, 6], [6, 7], [7, 8],
+                [0, 9], [9, 10], [10, 11], [11, 12],
+                [0, 13], [13, 14], [14, 15], [15, 16],
+                [0, 17], [17, 18], [18, 19], [19, 20],
+                [5, 9], [9, 13], [13, 17]
+            ];
+
+            handCtx.strokeStyle = color;
+            handCtx.lineWidth = 2;
+
+            connections.forEach(([i, j]) => {
+                const p1 = landmarks[i];
+                const p2 = landmarks[j];
+                handCtx.beginPath();
+                handCtx.moveTo(p1.x * handCanvas.width, p1.y * handCanvas.height);
+                handCtx.lineTo(p2.x * handCanvas.width, p2.y * handCanvas.height);
+                handCtx.stroke();
+            });
+
+            // Draw landmarks
+            landmarks.forEach((landmark, index) => {
+                const x = landmark.x * handCanvas.width;
+                const y = landmark.y * handCanvas.height;
+
+                handCtx.beginPath();
+                handCtx.arc(x, y, index === 8 || index === 4 ? 8 : 4, 0, 2 * Math.PI);
+                if (index === 8) {
+                    handCtx.fillStyle = '#ff00ff';
+                } else if (index === 4) {
+                    handCtx.fillStyle = '#fff000';
+                } else {
+                    handCtx.fillStyle = highlightColor;
+                }
+                handCtx.fill();
+            });
+
+            handCtx.restore();
+        }
+
+        function onResults(results) {
+            // Clear hand canvas
+            handCtx.clearRect(0, 0, handCanvas.width, handCanvas.height);
+
+            // Reset detection states (but keep grabbed corners if still pinching)
+            const prevLeftPinching = leftHand.pinching;
+            const prevRightPinching = rightHand.pinching;
+            
+            leftHand.detected = false;
+            rightHand.detected = false;
+            leftHand.pinching = false;
+            rightHand.pinching = false;
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                for (let i = 0; i < results.multiHandLandmarks.length; i++) {
+                    const landmarks = results.multiHandLandmarks[i];
+                    // MediaPipe returns handedness from camera's perspective, flip it
+                    const handedness = results.multiHandedness[i].label === 'Left' ? 'Right' : 'Left';
+
+                    drawHandLandmarks(landmarks, handedness);
+
+                    const indexTip = landmarks[8];
+                    const thumbTip = landmarks[4];
+
+                    // Convert to screen coordinates (mirrored)
+                    const fingerX = (1 - indexTip.x) * handCanvas.width;
+                    const fingerY = indexTip.y * handCanvas.height;
+
+                    // Check pinch
+                    const pinchDistance = getDistance(
+                        { x: indexTip.x * handCanvas.width, y: indexTip.y * handCanvas.height },
+                        { x: thumbTip.x * handCanvas.width, y: thumbTip.y * handCanvas.height }
+                    );
+                    const isPinching = pinchDistance < 50;
+
+                    if (handedness === 'Left') {
+                        leftHand.detected = true;
+                        leftHand.x = fingerX;
+                        leftHand.y = fingerY;
+                        leftHand.pinching = isPinching;
+
+                        fingerCursorLeft.style.display = 'block';
+                        fingerCursorLeft.style.left = (fingerX - 25) + 'px';
+                        fingerCursorLeft.style.top = (fingerY - 25) + 'px';
+
+                        // Handle grabbing
+                        if (isPinching) {
+                            if (leftHand.grabbedCorner < 0) {
+                                // Try to grab a corner (not already grabbed by right hand)
+                                leftHand.grabbedCorner = findNearestCorner(fingerX, fingerY, rightHand.grabbedCorner);
+                            }
+                            if (leftHand.grabbedCorner >= 0) {
+                                // Move the grabbed corner
+                                targetCorners[leftHand.grabbedCorner].x = fingerX;
+                                targetCorners[leftHand.grabbedCorner].y = fingerY;
+                            }
+                        } else {
+                            leftHand.grabbedCorner = -1;
+                        }
+
+                        // Update cursor classes
+                        fingerCursorLeft.classList.toggle('pinching', isPinching && leftHand.grabbedCorner < 0);
+                        fingerCursorLeft.classList.toggle('grabbing', leftHand.grabbedCorner >= 0);
+
+                    } else {
+                        rightHand.detected = true;
+                        rightHand.x = fingerX;
+                        rightHand.y = fingerY;
+                        rightHand.pinching = isPinching;
+
+                        fingerCursorRight.style.display = 'block';
+                        fingerCursorRight.style.left = (fingerX - 25) + 'px';
+                        fingerCursorRight.style.top = (fingerY - 25) + 'px';
+
+                        // Handle grabbing
+                        if (isPinching) {
+                            if (rightHand.grabbedCorner < 0) {
+                                // Try to grab a corner (not already grabbed by left hand)
+                                rightHand.grabbedCorner = findNearestCorner(fingerX, fingerY, leftHand.grabbedCorner);
+                            }
+                            if (rightHand.grabbedCorner >= 0) {
+                                // Move the grabbed corner
+                                targetCorners[rightHand.grabbedCorner].x = fingerX;
+                                targetCorners[rightHand.grabbedCorner].y = fingerY;
+                            }
+                        } else {
+                            rightHand.grabbedCorner = -1;
+                        }
+
+                        // Update cursor classes
+                        fingerCursorRight.classList.toggle('pinching', isPinching && rightHand.grabbedCorner < 0);
+                        fingerCursorRight.classList.toggle('grabbing', rightHand.grabbedCorner >= 0);
+                    }
+                }
+            }
+
+            // Hide cursors for undetected hands
+            if (!leftHand.detected) {
+                fingerCursorLeft.style.display = 'none';
+                leftHand.grabbedCorner = -1;
+            }
+            if (!rightHand.detected) {
+                fingerCursorRight.style.display = 'none';
+                rightHand.grabbedCorner = -1;
+            }
+
+            // Update status
+            if (leftHand.detected) {
+                if (leftHand.grabbedCorner >= 0) {
+                    leftHandStatus.textContent = 'GRAB';
+                    leftHandStatus.classList.add('active');
+                } else if (leftHand.pinching) {
+                    leftHandStatus.textContent = 'PINCH';
+                    leftHandStatus.classList.remove('active');
+                } else {
+                    leftHandStatus.textContent = 'READY';
+                    leftHandStatus.classList.remove('active');
+                }
+            } else {
+                leftHandStatus.textContent = '--';
+                leftHandStatus.classList.remove('active');
+            }
+
+            if (rightHand.detected) {
+                if (rightHand.grabbedCorner >= 0) {
+                    rightHandStatus.textContent = 'GRAB';
+                    rightHandStatus.classList.add('active');
+                } else if (rightHand.pinching) {
+                    rightHandStatus.textContent = 'PINCH';
+                    rightHandStatus.classList.remove('active');
+                } else {
+                    rightHandStatus.textContent = 'READY';
+                    rightHandStatus.classList.remove('active');
+                }
+            } else {
+                rightHandStatus.textContent = '--';
+                rightHandStatus.classList.remove('active');
+            }
+
+            // Mode status
+            const bothGrabbing = leftHand.grabbedCorner >= 0 && rightHand.grabbedCorner >= 0;
+            const oneGrabbing = leftHand.grabbedCorner >= 0 || rightHand.grabbedCorner >= 0;
+
+            if (bothGrabbing) {
+                modeStatus.textContent = 'STRETCH!';
+                modeStatus.classList.add('active');
+            } else if (oneGrabbing) {
+                modeStatus.textContent = 'PULL';
+                modeStatus.classList.add('active');
+            } else {
+                modeStatus.textContent = 'IDLE';
+                modeStatus.classList.remove('active');
+            }
+
+            // Draw shape
+            drawShape();
+        }
+
+        // Initialize MediaPipe Hands
+        const hands = new Hands({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+            }
+        });
+
+        hands.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.7,
+            minTrackingConfidence: 0.5
+        });
+
+        hands.onResults(onResults);
+
+        // Animation loop for smooth shape rendering
+        function animate() {
+            drawShape();
+            requestAnimationFrame(animate);
+        }
+
+        // Initialize Camera
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({ image: videoElement });
+            },
+            width: 1280,
+            height: 720
+        });
+
+        camera.start().then(() => {
+            setTimeout(() => {
+                loadingOverlay.classList.add('hidden');
+            }, 1500);
+        }).catch(err => {
+            console.error('Camera error:', err);
+            document.querySelector('.loading-text').textContent = 'CAMERA ACCESS DENIED';
+        });
+    </script>
+</body>
+</html>
